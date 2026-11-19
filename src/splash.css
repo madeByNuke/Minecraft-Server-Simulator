@@ -1,0 +1,144 @@
+[hidden] {
+  display: none !important;
+}
+
+/* keep the close/minimize buttons usable while the loading screen is up */
+.window {
+  position: relative;
+}
+.window-controls {
+  position: relative;
+  z-index: 60;
+}
+
+/* ---------- Loading screen ---------- */
+.splash {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: linear-gradient(rgba(10, 10, 12, 0.55), rgba(10, 10, 12, 0.82)),
+    url("./assets/loading-bg.jpg") center / cover no-repeat, #18181b;
+  transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+}
+.splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* "SSMC" in the app's own font replaces the spinning logo */
+.splash-title {
+  font-family: "FontOne", "Lucida Console", Consolas, monospace;
+  font-size: 76px;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  padding-left: 0.12em; /* keeps the letters visually centred */
+  color: #fff;
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.65);
+}
+
+.splash-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.splash-status {
+  min-height: 14px;
+  padding: 0 28px;
+  font-size: 11px;
+  color: #a1a1aa;
+  text-align: center;
+}
+.splash-status.error {
+  color: #f87171;
+}
+
+.splash-bar {
+  width: 62%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+.splash-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: #3b9eff;
+  transition: width 0.4s ease;
+}
+.splash-retry {
+  margin-top: 2px;
+}
+
+/* ---------- EULA prompt ---------- */
+.eula {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+}
+.eula-card {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 12px;
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.eula-card h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+.eula-card p {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #a1a1aa;
+}
+.eula-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: #3b9eff;
+  cursor: pointer;
+}
+.eula-link:hover {
+  text-decoration: underline;
+}
+.eula-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.eula-secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 18px;
+  font-size: 12px;
+  color: #d4d4d8;
+  cursor: pointer;
+}
+.eula-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}

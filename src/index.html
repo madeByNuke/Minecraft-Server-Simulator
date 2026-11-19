@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Server Simulator for Minecrate Java</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="splash.css" />
+    <script type="module" src="main.js" defer></script>
+    <script type="module" src="boot.js" defer></script>
+  </head>
+
+  <body>
+    <div class="window">
+      <svg width="0" height="0" style="position: absolute">
+        <symbol id="cube" viewBox="0 0 32 32">
+          <polygon points="16,3 29,10 16,17 3,10" fill="#5fae3a" />
+          <polygon points="3,10 16,17 16,30 3,23" fill="#7a5230" />
+          <polygon points="29,10 16,17 16,30 29,23" fill="#5a3b21" />
+        </symbol>
+      </svg>
+      <svg width="0" height="0" style="position: absolute">
+        <symbol id="cube" viewBox="0 0 32 32">
+          <polygon points="16,3 29,10 16,17 3,10" fill="#5fae3a" />
+          <polygon points="3,10 16,17 16,30 3,23" fill="#7a5230" />
+          <polygon points="29,10 16,17 16,30 29,23" fill="#5a3b21" />
+        </symbol>
+      </svg>
+      <section class="panel">
+        <header class="panel-header">
+          <span class="app-title"
+            >Server Simulator for Minecraft Java Edition</span
+          >
+          <div class="window-controls">
+            <button
+              id="minimize-btn"
+              class="ctrl-btn"
+              title="Minimize"
+              aria-label="Minimize"
+            >
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              >
+                <path d="M2 10h8" />
+              </svg>
+            </button>
+            <button
+              id="maximize-btn"
+              class="ctrl-btn"
+              title="Maximize"
+              aria-label="Maximize"
+            >
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              >
+                <rect x="2" y="2" width="8" height="8" />
+              </svg>
+            </button>
+            <button
+              id="close-btn"
+              class="ctrl-btn"
+              title="Close"
+              aria-label="Close"
+            >
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              >
+                <path d="M2 2l8 8M10 2l-8 8" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <nav class="nav">
+          <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="play" type="button">
+              Play
+            </button>
+            <button class="nav-tab" data-tab="worlds" type="button">
+              Worlds
+            </button>
+            <button class="nav-tab" data-tab="plugins" type="button">
+              Plugins
+            </button>
+          </div>
+          <div id="nav-actions" class="nav-actions">
+            <button
+              id="help-btn"
+              class="icon-btn"
+              type="button"
+              title="About the server list"
+            >
+              ?
+            </button>
+            <button
+              class="gear icon-btn"
+              type="button"
+              title="Server settings"
+              aria-label="Server settings"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="3"></circle>
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                ></path>
+              </svg>
+            </button>
+            <button id="reset-btn" class="toolbar-btn" type="button">
+              Reset
+            </button>
+          </div>
+        </nav>
+
+        <!-- PLAY -->
+        <section id="tab-play" class="tab">
+          <div id="play-scroll" class="play-scroll">
+            <div id="hero" class="hero empty" title="Choose a world">
+              <div class="hero-text">
+                <span id="hero-name" class="map-name"></span
+                ><span id="hero-sub" class="item-count"></span>
+              </div>
+            </div>
+            <div class="controls-bar">
+              <div id="dl-progress" class="dl-progress" hidden>
+                <span id="dl-status" class="start-status"></span>
+                <div class="start-bar">
+                  <div id="dl-fill" class="start-fill"></div>
+                </div>
+              </div>
+              <div class="controls">
+                <label class="ver"
+                  ><svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="lucide lucide-gallery-horizontal-end preview-icon"
+                  >
+                    <path d="M2 7v10" />
+                    <path d="M6 5v14" />
+                    <rect width="12" height="18" x="10" y="3" rx="2" /></svg
+                  ><select id="ver-play"></select
+                ></label>
+                <button
+                  id="start-btn"
+                  class="primary-btn big-btn"
+                  type="button"
+                >
+                  Start Server
+                </button>
+                <div class="plug-wrap">
+                  <button id="plugin-btn" class="plug" type="button">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="lucide lucide-blocks preview-icon"
+                    >
+                      <path
+                        d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"
+                      />
+                      <rect x="14" y="2" width="8" height="8" rx="1" />
+                    </svg>
+                    <span id="plugin-label">No plugins</span
+                    ><span class="dots">&#9662;</span>
+                  </button>
+                  <div id="plugin-menu" class="plug-menu" hidden></div>
+                </div>
+              </div>
+              <div id="start-progress" class="start-progress" hidden>
+                <span id="start-status" class="start-status"></span>
+                <div class="start-bar">
+                  <div id="start-fill" class="start-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div id="console-slot"></div>
+
+            <div id="play-worlds">
+              <div id="games-view">
+                <div class="toolbar">
+                  <div class="tb-left">
+                    <div id="folder-bar" class="folder-bar" hidden>
+                      <button
+                        id="folder-back"
+                        class="back-btn"
+                        type="button"
+                        aria-label="Back"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                    <label class="search">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      >
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                      <input
+                        id="search-input"
+                        type="text"
+                        placeholder="Search worlds"
+                        spellcheck="false"
+                      />
+                    </label>
+                  </div>
+                  <h2 id="folder-name" class="maps-title toolbar-title"></h2>
+                  <div class="tb-right">
+                    <button id="view-toggle" class="toolbar-btn" type="button">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                      </svg>
+                      <span>View</span>
+                    </button>
+                    <button id="sort-toggle" class="toolbar-btn" type="button">
+                      Sort: Name
+                    </button>
+                    <div id="world-actions" class="toolbar-actions" hidden>
+                      <button
+                        id="toolbar-import"
+                        class="toolbar-btn"
+                        type="button"
+                      >
+                        Import
+                      </button>
+                      <button
+                        id="toolbar-open-folder"
+                        class="toolbar-btn"
+                        type="button"
+                      >
+                        Open folder
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="grid-wrap">
+                  <div id="grid" class="grid"></div>
+                  <div id="empty-state" class="empty-state">
+                    <p class="empty-title">
+                      There are no worlds detected.<br />Import a zipped world,
+                      or move your<br />world .zip files into the worlds folder.
+                    </p>
+                    <div class="empty-actions">
+                      <button
+                        id="empty-import"
+                        class="toolbar-btn"
+                        type="button"
+                      >
+                        Import world
+                      </button>
+                      <button
+                        id="empty-open-folder"
+                        class="toolbar-btn"
+                        type="button"
+                      >
+                        Open folder
+                      </button>
+                    </div>
+                    <p class="empty-hint">Only zipped files are supported</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- WORLDS -->
+        <section id="tab-worlds" class="tab" hidden>
+          <div id="worlds-host" class="host"></div>
+          <button class="primary-btn continue" type="button">Continue</button>
+        </section>
+
+        <!-- PLUGINS -->
+        <section id="tab-plugins" class="tab" hidden>
+          <div class="host">
+            <div class="pbox">
+              <div class="toolbar">
+                <div class="tb-left">
+                  <label class="search">
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    >
+                      <circle cx="11" cy="11" r="7"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                      id="plugin-search"
+                      type="text"
+                      placeholder="Search plugins"
+                      spellcheck="false"
+                    />
+                  </label>
+                </div>
+                <h2 class="maps-title toolbar-title">Plugins</h2>
+                <div class="tb-right">
+                  <button id="plugin-sort" class="toolbar-btn" type="button">
+                    Sort: Name
+                  </button>
+                  <div class="toolbar-actions">
+                    <button
+                      id="plugin-import"
+                      class="toolbar-btn"
+                      type="button"
+                    >
+                      Import
+                    </button>
+                    <button
+                      id="plugin-folder"
+                      class="toolbar-btn"
+                      type="button"
+                    >
+                      Open folder
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div id="plugin-list" class="list"></div>
+            </div>
+          </div>
+          <button class="primary-btn continue" type="button">Continue</button>
+        </section>
+      </section>
+      <!-- … settings modal, dialog, splash stay unchanged below … -->
+
+      <!-- SERVER SETTINGS -->
+      <div id="settings" class="modal" hidden>
+        <div class="modal-card">
+          <div class="modal-head">
+            <h2>Server settings</h2>
+            <button
+              id="settings-close"
+              class="ctrl-btn"
+              title="Close"
+              aria-label="Close settings"
+            >
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              >
+                <path d="M2 2l8 8M10 2l-8 8" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="ram-select"
+              >Server memory (RAM)</label
+            >
+            <select id="ram-select">
+              <option value="1024">1 GB</option>
+              <option value="2048">2 GB</option>
+              <option value="3072">3 GB</option>
+              <option value="4096">4 GB</option>
+              <option value="6144">6 GB</option>
+              <option value="8192">8 GB</option>
+            </select>
+            <span class="field-hint"
+              >Use no more than half of your computer's memory.</span
+            >
+          </div>
+
+          <div class="field">
+            <span class="field-label">Who can join</span>
+            <div class="segmented" id="access-seg">
+              <button type="button" class="seg active" data-value="verified">
+                Microsoft accounts only
+              </button>
+              <button type="button" class="seg" data-value="anyone">
+                Anyone (no check)
+              </button>
+            </div>
+            <span class="field-hint" id="access-hint"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Server versions</span>
+            <select id="ver-select"></select>
+            <button
+              id="ver-download"
+              class="eula-secondary folder-btn"
+              type="button"
+            >
+              Download
+            </button>
+            <span class="field-hint" id="ver-hint"></span>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Worlds &amp; plugins folder</span>
+            <span class="field-hint" id="lib-path"></span>
+            <button
+              id="open-library"
+              class="eula-secondary folder-btn"
+              type="button"
+            >
+              Open folder
+            </button>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Who can see the world</span>
+            <div class="segmented" id="lan-seg">
+              <button type="button" class="seg active" data-value="local">
+                Only me
+              </button>
+              <button type="button" class="seg" data-value="lan">
+                Players on my network
+              </button>
+            </div>
+            <span class="field-hint" id="lan-hint"></span>
+            <button
+              id="fw-btn"
+              class="eula-secondary folder-btn"
+              type="button"
+              hidden
+            >
+              Allow Java through the firewall
+            </button>
+            <span class="field-hint" id="fw-result"></span>
+          </div>
+
+          <p class="modal-note">
+            If a game is running, saving restarts the server to apply the
+            changes.
+          </p>
+          <div class="modal-actions">
+            <button id="settings-cancel" class="eula-secondary" type="button">
+              Cancel
+            </button>
+            <button id="settings-save" class="primary-btn" type="button">
+              Save &amp; restart
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIRM / MESSAGE -->
+      <div id="dialog" class="modal dialog" hidden>
+        <div class="modal-card">
+          <h2 id="dialog-title"></h2>
+          <p id="dialog-text" class="dialog-text"></p>
+          <div class="modal-actions">
+            <button id="dialog-cancel" class="eula-secondary" type="button">
+              Cancel
+            </button>
+            <button id="dialog-ok" class="primary-btn" type="button">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOADING SCREEN (covers everything until the server is ready) -->
+      <div id="splash" class="splash">
+        <div id="splash-title" class="splash-title">
+          <img src="assets/icons/icon.png" />
+        </div>
+
+        <div class="splash-bottom">
+          <p id="splash-status" class="splash-status">Starting...</p>
+          <div class="splash-bar">
+            <div id="splash-fill" class="splash-fill"></div>
+          </div>
+          <button id="splash-retry" class="primary-btn splash-retry" hidden>
+            Try again
+          </button>
+        </div>
+
+        <!-- Minecraft EULA prompt -->
+        <div id="eula" class="eula" hidden>
+          <div class="eula-card">
+            <h2>Minecraft EULA</h2>
+            <p>
+              To run a Minecraft server on your computer you need to agree to
+              the Minecraft End User License Agreement.
+            </p>
+            <button id="eula-link" class="eula-link" type="button">
+              Read the Minecraft EULA
+            </button>
+            <div class="eula-actions">
+              <button id="eula-decline" class="eula-secondary" type="button">
+                Decline
+              </button>
+              <button id="eula-accept" class="primary-btn" type="button">
+                I agree
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

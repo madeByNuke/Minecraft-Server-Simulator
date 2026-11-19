@@ -1,0 +1,33 @@
+[package]
+name = "ssmc"
+version = "0.1.0"
+description = "SSMC - Server Simulator for Minecraft Java Edition"
+edition = "2021"
+
+[lib]
+name = "ssmc_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+fastnbt = "2"
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["process", "io-util", "fs", "time", "sync", "macros", "rt"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+futures-util = "0.3"
+sha2 = "0.10"
+base64 = "0.22"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+flate2 = "1"
+
+[profile.dev]
+debug = 0
