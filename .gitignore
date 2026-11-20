@@ -40,3 +40,9 @@ Desktop.ini
 *.sln
 *.swp
 *.swo
+# Secrets - never commit
+*.key
+*.pem
+.env
+.env.*
+.tauri/
