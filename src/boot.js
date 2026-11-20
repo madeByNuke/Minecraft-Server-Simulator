@@ -51,32 +51,81 @@ function stopCreep() {
 }
 
 // ---------- App updates ----------
-async function checkForUpdates() {
+let pendingUpdate = null;
+let updateShown = false;
+
+async function findUpdate() {
   try {
     const timeout = new Promise((r) => setTimeout(() => r(null), 6000));
     const update = await Promise.race([T.updater.check(), timeout]);
-    if (!update) return;
+    if (
+      update &&
+      (!pendingUpdate || pendingUpdate.version !== update.version)
+    ) {
+      pendingUpdate = update;
+      updateShown = false;
+    }
+  } catch (e) {
+    console.warn("Update check skipped:", e);
+  }
+}
 
-    setStatus(`Downloading update ${update.version}...`);
-    setBar(0, true);
+function showUpdatePopup() {
+  if (!pendingUpdate || updateShown) return;
+  updateShown = true;
+  const u = pendingUpdate;
+  const box = document.createElement("div");
+  box.className = "update-toast";
+  box.innerHTML = `
+    <div class="update-head"><strong>Update available</strong><span class="u-ver"></span></div>
+    <pre class="update-notes"></pre>
+    <div class="update-bar" hidden><div class="update-fill"></div></div>
+    <div class="update-status"></div>
+    <div class="update-actions">
+      <button class="eula-secondary u-later" type="button">Update later</button>
+      <button class="primary-btn u-now" type="button">Update now</button>
+    </div>`;
+  box.querySelector(".u-ver").textContent = `Version ${u.version}`;
+  box.querySelector(".update-notes").textContent =
+    u.body || "Bug fixes and improvements.";
+  const bar = box.querySelector(".update-bar");
+  const fill = box.querySelector(".update-fill");
+  const status = box.querySelector(".update-status");
+  const now = box.querySelector(".u-now");
+  const later = box.querySelector(".u-later");
+
+  later.onclick = () => box.remove();
+  now.onclick = async () => {
+    if (typeof running !== "undefined" && running) {
+      status.textContent = "Stop your server before updating.";
+      return;
+    }
+    now.disabled = later.disabled = true;
+    bar.hidden = false;
+    status.textContent = "Downloading...";
     let total = 0;
     let got = 0;
-    await update.downloadAndInstall((ev) => {
-      if (ev.event === "Started") total = ev.data.contentLength || 0;
-      if (ev.event === "Progress") {
-        got += ev.data.chunkLength;
-        if (total) {
-          const pct = Math.round((got / total) * 100);
-          setStatus(`Downloading update ${update.version}... ${pct}%`);
-          setBar(pct);
+    try {
+      await u.downloadAndInstall((ev) => {
+        if (ev.event === "Started") total = ev.data.contentLength || 0;
+        if (ev.event === "Progress") {
+          got += ev.data.chunkLength;
+          if (total) {
+            const pct = Math.round((got / total) * 100);
+            fill.style.width = pct + "%";
+            status.textContent = `Downloading... ${pct}%`;
+          }
         }
-      }
-      if (ev.event === "Finished") setStatus("Installing update...");
-    });
-    await T.process.relaunch();
-  } catch (e) {
-    console.warn("Update check skipped:", e); // offline, no update, or not configured yet
-  }
+        if (ev.event === "Finished")
+          status.textContent = "Installing... the app will restart.";
+      });
+      await T.process.relaunch();
+    } catch (e) {
+      status.textContent = "Update failed: " + e;
+      now.disabled = later.disabled = false;
+    }
+  };
+  document.body.append(box);
 }
 
 // ---------- EULA ----------
@@ -103,7 +152,7 @@ async function quitApp() {
 (async function boot() {
   setStatus("Checking for updates...");
   setBar(3);
-  await checkForUpdates();
+  await findUpdate();
 
   const status = await invoke("get_status");
   if (!status.eula_accepted) {
@@ -118,6 +167,12 @@ async function quitApp() {
   splash.classList.add("hide");
   window.__bootDone = true;
   window.dispatchEvent(new Event("boot-done"));
+  showUpdatePopup();
+  // keep checking while the app is open
+  setInterval(async () => {
+    await findUpdate();
+    showUpdatePopup();
+  }, 30 * 60 * 1000);
 })();
 
 // main.js reuses this loading screen while a game's server starts

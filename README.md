@@ -1,7 +1,10 @@
-# Get Good - The Dojo
+# Minecraft Server Simulator
 
-Minecraft Server Simulator
+Teminal commands to remember (ignore this, its for personal use):
 
-# npm run tauri dev
-
-# cargo clean
+1. use 'npm run tauri dev
+2. use 'cargo clean'
+3. use 'set TAURI_SIGNING_PRIVATE_KEY=%USERPROFILE%\.tauri\ssmc.key'
+4. use 'set TAURI_SIGNING_PRIVATE_KEY_PASSWORD=your-password-here'
+5. use 'npm run tauri build'
+6. use 'explorer src-tauri\target\release\bundle\nsis'
