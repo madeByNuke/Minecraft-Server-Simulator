@@ -1,0 +1,571 @@
+#nav-actions,
+.play-summary {
+  display: none !important;
+}
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.side {
+  position: relative;
+  width: 176px;
+  height: auto;
+  flex: none;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 8px 0;
+  transition: width 0.2s;
+  border-right: 1px solid #000;
+}
+.side .nav-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 34px;
+}
+.nav-tab,
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-bottom: 0;
+  background: none;
+  color: #b4b4bc;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.nav-tab svg,
+.nav-link svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nav-tab:hover,
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.nav-tab.active {
+  color: #7fd35a;
+  border-left-color: var(--mc-green-hi);
+  background: rgba(255, 255, 255, 0.06);
+}
+.side .gear {
+  margin-top: auto;
+}
+.side-toggle {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: 0;
+  color: #b4b4bc;
+  font-size: 20px;
+  cursor: pointer;
+}
+.side.collapsed {
+  width: 52px;
+}
+.side.collapsed span {
+  display: none;
+}
+.side.collapsed .nav-tab,
+.side.collapsed .nav-link {
+  padding: 0 14px;
+}
+.side.collapsed .side-toggle {
+  transform: rotate(180deg);
+  right: 14px;
+}
+
+.controls-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 22px 24px 16px;
+  border: 0;
+  background: linear-gradient(rgba(14, 14, 16, 0.55), rgba(14, 14, 16, 0.82)),
+    url("./assets/hero-bg.jpg") center/cover no-repeat,
+    url("./assets/loading-bg.jpg") center/cover no-repeat, #1c1c1e;
+}
+.controls-bar .hero {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+  border: 0;
+  background: none !important;
+  display: flex;
+  justify-content: center;
+}
+.controls-bar .hero-text {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  background: none;
+}
+.controls-bar .map-name {
+  font-size: 16px;
+}
+.controls {
+  width: 100%;
+  max-width: 440px;
+  margin: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.controls .ver,
+.controls .plug {
+  flex: none;
+  width: 100%;
+  height: 42px;
+}
+.controls .plug-wrap,
+.start-progress,
+.dl-progress {
+  width: 100%;
+  max-width: 440px;
+}
+.controls .big-btn {
+  width: 100%;
+  padding: 12px;
+}
+
+#home-lists {
+  padding: 16px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(20, 20, 21, 0.8);
+}
+.home-h {
+  margin: 10px 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 8px;
+}
+.home-empty {
+  font-size: 12px;
+  color: #a1a1aa;
+}
+.home-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px;
+  background: rgba(24, 24, 25, 0.94);
+  border: 2px solid #121213;
+  cursor: pointer;
+}
+.home-card:hover {
+  background: #2b2b2d;
+}
+.home-card.picked {
+  border-color: var(--mc-green-hi);
+}
+.home-card.bad {
+  opacity: 0.55;
+}
+.home-card img {
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  flex: none;
+}
+.hc-t {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hc-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hc-sub {
+  font-size: 11px;
+  color: #a1a1aa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-footer {
+  margin-top: auto;
+  padding: 12px 24px;
+}
+/* ---- Play tab: undo old styles.css rules ---- */
+#tab-play .play-scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding: 0 !important;
+}
+.play-scroll > * {
+  flex: none;
+}
+.play-scroll .controls-bar {
+  order: 0;
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 !important;
+  padding: 22px 24px 16px !important;
+  border: 0;
+  box-shadow: none;
+  background: linear-gradient(rgba(14, 14, 16, 0.25), rgba(14, 14, 16, 0.55)),
+    url("./assets/hero-bg.jpg") center/cover no-repeat,
+    url("./assets/loading-bg.jpg") center/cover no-repeat, #1c1c1e;
+}
+#console-slot {
+  order: 1;
+}
+#console-slot:not(:empty) {
+  flex: none;
+  overflow: visible;
+  padding: 12px 24px;
+}
+#home-lists {
+  order: 2;
+  background: rgba(20, 20, 21, 0.55);
+}
+#play-worlds {
+  order: 3;
+}
+.play-scroll .app-footer {
+  order: 9;
+  margin-top: auto;
+}
+
+/* start button: normal size */
+.controls {
+  align-items: stretch;
+}
+.controls #start-btn {
+  flex: none;
+  width: 100%;
+  height: 52px;
+  margin: 0;
+  font-size: 18px;
+}
+.controls .ver,
+.controls .plug-wrap {
+  margin-bottom: 0;
+}
+
+/* sidebar settings button */
+.side .gear {
+  width: 100%;
+  height: 40px;
+  margin-top: auto;
+  padding: 0 16px;
+  justify-content: flex-start;
+  background: none;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  opacity: 1;
+  color: #b4b4bc;
+}
+.side .gear:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* settings modal scrollbar */
+#settings .modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+#settings .modal-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+}
+.controls {
+  margin-top: 130px;
+  margin-bottom: 150px;
+}
+/* dark section + tabs */
+#home-lists {
+  flex: 1 0 auto;
+  gap: 0;
+  padding: 0 24px 16px;
+  background: rgba(24, 24, 25, 0.94);
+  border-top: 1px solid #000;
+}
+.home-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 8px;
+}
+.home-search {
+  display: flex;
+  align-items: center;
+  max-width: 220px;
+  padding: 0 8px;
+  background: #121213;
+  border: 2px solid #000;
+}
+.home-search input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  background: none;
+  border: 0;
+  outline: 0;
+  color: #fff;
+  font-size: 12px;
+  user-select: text;
+}
+.home-tabs {
+  display: flex;
+  gap: 4px;
+}
+.home-tab {
+  padding: 6px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: #b4b4bc;
+  font-size: 14px;
+  cursor: pointer;
+}
+.home-tab:hover {
+  color: #fff;
+}
+.home-tab.active {
+  color: #fff;
+  font-weight: 600;
+  border-bottom-color: var(--mc-green-hi);
+}
+.home-body {
+  padding-top: 8px;
+}
+.home-back {
+  margin-bottom: 8px;
+  padding: 4px 12px;
+  background: #2b2b2d;
+  border: 2px solid #000;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+.home-card.folder {
+  border-left: 4px solid #92400e;
+}
+.home-card.static {
+  cursor: default;
+  margin: 12px 24px 0;
+}
+.home-card.static:hover {
+  background: rgba(24, 24, 25, 0.94);
+}
+
+/* console view while the server runs */
+#console-slot:not(:empty) {
+  flex: 1;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+#console-slot .console {
+  flex: 1;
+  min-height: 0;
+}
+
+/* dark scrollbars everywhere */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: #18181a;
+}
+*::-webkit-scrollbar-track {
+  background: #18181a;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-corner {
+  background: #18181a;
+}
+/* 1. tabs/search clickable: lift the tab bar above the banner layer */
+.play-scroll .controls-bar {
+  z-index: auto;
+}
+.plug-menu {
+  z-index: 50;
+}
+.home-bar {
+  position: relative;
+  z-index: 3;
+}
+
+/* 2. dark theme all the way down, including the footer */
+#tab-play .play-scroll {
+  background: rgba(24, 24, 25, 0.94);
+}
+.play-scroll .app-footer {
+  background: rgba(24, 24, 25, 0.94);
+  border-top: 1px solid #000;
+  padding: 10px 24px 12px;
+}
+
+/* 3. version + plugins side by side, Start button underneath */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-width: 420px;
+}
+.controls .ver {
+  order: 1;
+  width: 180px;
+}
+.controls .plug-wrap {
+  order: 2;
+  width: 180px;
+  max-width: none;
+}
+.controls #start-btn {
+  order: 3;
+  grid-column: 1 / -1;
+}
+:root {
+  --controls-w: 280px; /* width of version/plugins buttons, Start button, and loading bar */
+  --card-min: 340px; /* minimum width of each world card (bigger = fewer per row) */
+  --card-img: 96px; /* world image width (height is 3/4 of this) */
+}
+
+/* narrower controls + loading bar */
+.controls,
+.controls-bar .start-progress,
+.controls-bar .dl-progress,
+.start-progress,
+.dl-progress {
+  max-width: var(--controls-w);
+}
+
+/* bigger world cards */
+.home-grid {
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  gap: 12px;
+}
+.home-card {
+  gap: 14px;
+  padding: 8px;
+}
+.home-card img {
+  width: var(--card-img);
+  height: calc(var(--card-img) * 0.75);
+}
+.hc-name {
+  font-size: 15px;
+}
+.hc-sub {
+  font-size: 12px;
+}
+/* selected world above the buttons (the 130px gap moves to the hero line) */
+.controls {
+  margin-top: 100xp;
+}
+.controls-bar .hero {
+  margin-top: 130px;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 2;
+}
+
+/* loading bars directly under the Start button */
+.controls #start-progress,
+.controls #dl-progress {
+  order: 4;
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+/* space between selected world and console */
+#console-slot:not(:empty) {
+  gap: 16px;
+}
+.home-card.static {
+  margin: 0;
+}
+
+/* settings dropdown */
+.side {
+  z-index: 20;
+}
+.gear-menu {
+  position: absolute;
+  left: 8px;
+  bottom: 52px;
+  width: 200px;
+  padding: 4px;
+  background: #1c1c1e;
+  border: 1px solid #000;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  z-index: 80;
+}
+.gear-menu button {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: 0;
+  color: #d4d4d8;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.gear-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}

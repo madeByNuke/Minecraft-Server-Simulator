@@ -159,6 +159,7 @@ async function refreshLibrary() {
   try {
     library = await invoke("list_library");
     links = await invoke("get_links");
+    spWorlds = await invoke("list_singleplayer").catch(() => []);
   } catch (e) {
     console.warn("list_library:", e);
   }
@@ -264,7 +265,7 @@ let ignoreExitUntil = 0;
 let stopTyped = false;
 let curFolder = null;
 const openFolders = new Set();
-let step = "pick"; // pick | plugins | ready
+let step = "ready"; // pick | plugins | ready
 let stepInit = false;
 const playNext = h("button", "primary-btn continue", "Continue");
 playNext.type = "button";
@@ -299,7 +300,7 @@ function updateContinues() {
 const footer = h("div", "app-footer");
 footer.innerHTML =
   'Not affiliated with, approved by, or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB. &nbsp;·&nbsp; <a href="#" id="site-link">noblecratemc.com</a>';
-document.querySelector(".controls-bar").append(footer);
+$("play-scroll").append(footer);
 $("site-link").addEventListener("click", (e) => {
   e.preventDefault();
   T.opener.openUrl("https://noblecratemc.com").catch(console.error);
@@ -356,10 +357,10 @@ const curVer = () => (running ? running.version : serverVersion);
 const LAST = "ssmc_last";
 function saveLast() {
   try {
-    if (sel.map)
+    if (sel.map || sel.sp)
       localStorage.setItem(
         LAST,
-        JSON.stringify({ map: sel.map, plugins: [...sel.plugins] })
+        JSON.stringify({ map: sel.map, sp: sel.sp, plugins: [...sel.plugins] })
       );
     else localStorage.removeItem(LAST);
   } catch {}
@@ -367,9 +368,15 @@ function saveLast() {
 function restoreLast() {
   try {
     const l = JSON.parse(localStorage.getItem(LAST) || "null");
-    if (l && library.maps.some((m) => m.rel === l.map))
+    if (
+      l &&
+      (l.sp
+        ? spWorlds.some((w) => w.dir === l.sp)
+        : library.maps.some((m) => m.rel === l.map))
+    )
       sel = {
-        map: l.map,
+        map: l.sp ? null : l.map,
+        sp: l.sp || null,
         plugins: new Set(
           (l.plugins || []).filter((p) =>
             library.plugins.some((x) => x.rel === p)
@@ -474,7 +481,7 @@ async function resetAll() {
   lan = false;
   curFolder = null;
   pquery = "";
-  step = "pick";
+  step = "ready";
   $("plugin-search").value = "";
   setTab("play");
 }
@@ -521,6 +528,7 @@ function worldCard(f) {
   el.classList.toggle("picked", isPickedWorld(f));
   updateNext();
   el.addEventListener("click", () => clickWorld(f));
+  el.addEventListener("dblclick", () => useWorld(f));
   el.addEventListener("contextmenu", (e) => itemMenu("map", f, e));
   return el;
 }
@@ -528,6 +536,7 @@ function worldRow(f) {
   const el = makeRow(f, f.icon || DEFAULT_ICON, "created");
   el.classList.toggle("picked", isPickedWorld(f));
   el.addEventListener("click", () => clickWorld(f));
+  el.addEventListener("dblclick", () => useWorld(f));
   el.addEventListener("contextmenu", (e) => itemMenu("map", f, e));
   return el;
 }
@@ -791,6 +800,8 @@ function renderConsole() {
   slot.innerHTML = "";
   consoleEl = null;
   if (!running) return;
+  const rb = runBanner();
+  if (rb) slot.append(rb);
   const con = h("div", "console");
   con.append(h("div", "console-head", "Server Console"));
   const log = h("div", "console-log");
@@ -825,14 +836,12 @@ function renderConsole() {
   requestAnimationFrame(() => (log.scrollTop = log.scrollHeight));
 }
 function updateHero() {
-  const w = library.maps.find((m) => m.rel === sel.map);
-  const hero = $("hero");
-  hero.classList.toggle("empty", !w);
-  hero.style.backgroundImage = w ? `url("${w.icon || DEFAULT_ICON}")` : "none";
-  $("hero-name").textContent = w
-    ? stem(w.file)
-    : "Select a world to start the server";
-  $("hero-sub").textContent = w ? mcLabel(w.version) : "";
+  const w = selWorld();
+  $("hero").classList.toggle("empty", !w);
+  $("hero-name").textContent = w ? wName(w) : "No world selected";
+  $("hero-sub").textContent = w
+    ? mcLabel(w.version)
+    : "Pick a world below to start";
 }
 let pmq = "";
 function buildPluginMenu() {
@@ -923,6 +932,7 @@ function render() {
     buildPluginMenu();
     fillPlayVersions();
     renderConsole();
+    renderHome();
   }
   const p = prefs[tabKey()];
   $("sort-toggle").textContent = `Sort: ${
@@ -953,7 +963,11 @@ document.querySelectorAll(".continue").forEach((b) =>
     setTab("play");
   })
 );
-$("help-btn").addEventListener("click", () => message("Server list", HELP));
+$("help-btn").addEventListener("click", () =>
+  T.opener
+    .openUrl("https://noblecratemc.com/app/help.html")
+    .catch(console.error)
+);
 $("reset-btn").addEventListener("click", resetAll);
 $("plugin-import").addEventListener("click", () => importFiles("plugin"));
 $("plugin-sort").addEventListener("click", () => {
@@ -984,13 +998,28 @@ function setVersion(v) {
   applyLoading();
 }
 verPlay.addEventListener("change", () => setVersion(verPlay.value));
-startBtn.addEventListener("click", () => {
+startBtn.addEventListener("click", async () => {
   if (running) return stopWithConfirm();
   const info = versions.find((x) => x.version === curVer());
   if (info && info.installed && step !== "ready") return;
   if (!(info && info.installed)) return downloadServer(curVer());
-  if (!sel.map)
+  if (!sel.map && !sel.sp)
     return message("Choose a world", "Pick a world from the list below first.");
+  const sw = selWorld();
+  if (sw && !verMatch(sw.version, serverVersion)) return mismatch(sw);
+  if (!sel.plugins.size) {
+    const ok = await showDialog({
+      title: "No plugin selected",
+      text: "Do you want to continue without choosing a plugin?",
+      ok: "Yes",
+      cancel: "No",
+    });
+    if (!ok) {
+      $("plugin-menu").hidden = false;
+      plugBtn.parentElement.classList.add("open");
+      return;
+    }
+  }
   startGameFlow();
 });
 
@@ -1029,7 +1058,8 @@ async function startGameFlow() {
   try {
     await invoke("start_game", {
       version: serverVersion,
-      mapFile: s.map,
+      mapFile: s.map || "",
+      spWorld: s.sp || null,
       pluginFiles,
       lan,
     });
@@ -1048,6 +1078,12 @@ async function startGameFlow() {
     version: serverVersion,
   };
   saveLast();
+  pushRecent({
+    sp: s.sp || null,
+    map: s.map || null,
+    plugins: pluginFiles,
+    version: serverVersion,
+  });
   render();
 }
 
@@ -1153,7 +1189,16 @@ async function openSettings() {
 }
 const closeSettings = () => (settingsEl.hidden = true);
 
-document.querySelector(".gear").addEventListener("click", openSettings);
+const gearMenu = $("gear-menu");
+document.querySelector(".gear").addEventListener("click", (e) => {
+  e.stopPropagation();
+  gearMenu.hidden = !gearMenu.hidden;
+});
+document.addEventListener("mousedown", (e) => {
+  if (!e.target.closest("#gear-menu, .gear")) gearMenu.hidden = true;
+});
+gearMenu.addEventListener("click", () => (gearMenu.hidden = true));
+$("settings-open").addEventListener("click", openSettings);
 $("settings-close").addEventListener("click", closeSettings);
 $("settings-cancel").addEventListener("click", closeSettings);
 $("open-library").addEventListener("click", () => openFolder(null));
@@ -1788,6 +1833,302 @@ function openFolderModal(kind, parent) {
     showList();
   });
 }
+
+// ---------------- Home: Recently played + Your worlds ----------------
+let spWorlds = [];
+const RECENT = "ssmc_recent";
+const getRecent = () => {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT) || "[]");
+  } catch {
+    return [];
+  }
+};
+const rKey = (x) =>
+  [
+    x.sp ? "sp:" + x.sp : "zip:" + x.map,
+    x.version,
+    [...x.plugins].sort().join("|"),
+  ].join("::");
+function pushRecent(e) {
+  const list = [
+    { ...e, ts: Date.now() },
+    ...getRecent().filter((x) => rKey(x) !== rKey(e)),
+  ].slice(0, 10);
+  try {
+    localStorage.setItem(RECENT, JSON.stringify(list));
+  } catch {}
+}
+const verMatch = (wv, sv) =>
+  !wv || (wv.includes("older") ? sv.startsWith("1.8") : wv === sv);
+const wName = (w) => (w.dir !== undefined ? w.name : stem(w.file));
+const selWorld = () =>
+  sel.sp
+    ? spWorlds.find((w) => w.dir === sel.sp)
+    : library.maps.find((m) => m.rel === sel.map);
+const mismatch = (w) =>
+  message(
+    "Version mismatch",
+    `"${wName(w)}" was made in Minecraft ${
+      w.version
+    }, but the server is ${serverVersion}. Pick the matching server version in the version list.`
+  );
+
+function useWorld(f) {
+  if (tab !== "worlds") return;
+  if (running)
+    return message(
+      "A server is running",
+      "Stop the server to choose another world."
+    );
+  bulk.map.clear();
+  sel.map = f.rel;
+  sel.sp = null;
+  saveLast();
+  setTab("play");
+}
+function chooseSp(w) {
+  if (running)
+    return message(
+      "A server is running",
+      "Stop the server to choose another world."
+    );
+  if (!verMatch(w.version, serverVersion)) return mismatch(w);
+  sel.sp = w.dir;
+  sel.map = null;
+  saveLast();
+  render();
+  $("play-scroll").scrollTo({ top: 0, behavior: "smooth" });
+}
+function playRecent(r) {
+  if (running) return message("A server is running", "Stop the server first.");
+  if (loading.active) return;
+  const w = r.sp
+    ? spWorlds.find((x) => x.dir === r.sp)
+    : library.maps.find((x) => x.rel === r.map);
+  if (!w) return;
+  if (!verMatch(w.version, r.version)) return mismatch(w);
+  setVersion(r.version);
+  sel = {
+    map: r.sp ? null : r.map,
+    sp: r.sp || null,
+    plugins: new Set(
+      r.plugins.filter((p) => library.plugins.some((x) => x.rel === p))
+    ),
+  };
+  render();
+  startBtn.click();
+}
+
+let homeTab = "recent";
+let homeQuery = "";
+let homeFolder = "";
+
+function homeCard(title, subs, icon, cls, onClick) {
+  const el = h("div", "home-card " + cls);
+  const img = document.createElement("img");
+  img.src = icon || DEFAULT_ICON;
+  const t = h("div", "hc-t");
+  t.append(h("span", "hc-name", title));
+  subs.forEach((s) => t.append(h("span", "hc-sub", s)));
+  el.append(img, t);
+  el.addEventListener("click", onClick);
+  return el;
+}
+const findRecent = (r) =>
+  r.sp
+    ? spWorlds.find((x) => x.dir === r.sp)
+    : library.maps.find((x) => x.rel === r.map);
+
+function pickZip(f) {
+  if (running)
+    return message(
+      "A server is running",
+      "Stop the server to choose another world."
+    );
+  if (!verMatch(f.version, serverVersion)) return mismatch(f);
+  sel.map = f.rel;
+  sel.sp = null;
+  saveLast();
+  render();
+  $("play-scroll").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function buildHome() {
+  const host = $("home-lists");
+  host.innerHTML = "";
+  const bar = h("div", "home-bar");
+  const sWrap = h("label", "home-search");
+  const inp = document.createElement("input");
+  inp.type = "text";
+  inp.placeholder = "Search worlds";
+  inp.spellcheck = false;
+  inp.addEventListener("input", (e) => {
+    homeQuery = e.target.value.trim().toLowerCase();
+    renderHomeBody();
+  });
+  sWrap.append(inp);
+  const tabs = h("div", "home-tabs");
+  [
+    ["recent", "Recently Played"],
+    ["worlds", "Your Worlds"],
+    ["sp", "Singleplayer Worlds"],
+  ].forEach(([k, label]) => {
+    const b = h("button", "home-tab", label);
+    b.type = "button";
+    b.dataset.k = k;
+    b.addEventListener("click", () => {
+      homeTab = k;
+      homeFolder = "";
+      renderHome();
+    });
+    tabs.append(b);
+  });
+  bar.append(sWrap, tabs, h("div"));
+  host.append(bar, h("div", "home-body"));
+}
+
+function renderHome() {
+  const host = $("home-lists");
+  host.hidden = !!running; // while a game runs, the console takes this space
+  if (running) return;
+  if (!host.firstChild) buildHome();
+  host
+    .querySelectorAll(".home-tab")
+    .forEach((b) => b.classList.toggle("active", b.dataset.k === homeTab));
+  renderHomeBody();
+}
+
+function renderHomeBody() {
+  const body = $("home-lists").querySelector(".home-body");
+  if (!body) return;
+  body.innerHTML = "";
+  const q = (s) => !homeQuery || s.toLowerCase().includes(homeQuery);
+  const grid = h("div", "home-grid");
+  const cur = (v) => !verMatch(v, curVer());
+  let emptyText = "";
+
+  if (homeTab === "recent") {
+    emptyText = "Worlds you play will show up here.";
+    getRecent().forEach((r) => {
+      const w = findRecent(r);
+      if (!w || !q(wName(w))) return;
+      const pl = r.plugins.length
+        ? r.plugins.map((p) => stem(leaf(p))).join(", ")
+        : "No plugins";
+      grid.append(
+        homeCard(
+          wName(w),
+          [`${mcLabel(r.version)} · ${fmtDate(r.ts / 1000)}`, `Plugins: ${pl}`],
+          w.icon,
+          "",
+          () => playRecent(r)
+        )
+      );
+    });
+  } else if (homeTab === "worlds") {
+    emptyText = "No imported worlds yet. Import them from the Worlds tab.";
+    if (homeFolder && !homeQuery) {
+      const back = h("button", "home-back", `‹ Back  (${leaf(homeFolder)})`);
+      back.type = "button";
+      back.onclick = () => {
+        homeFolder = parentOf(homeFolder);
+        renderHomeBody();
+      };
+      body.append(back);
+    }
+    const folders = homeQuery
+      ? library.folders.filter((d) => q(leaf(d.name)))
+      : subsOf("map", homeFolder);
+    folders.forEach((d) =>
+      grid.append(
+        homeCard(
+          leaf(d.name),
+          [`Folder · ${countLabel(d.count)}`],
+          folderIcon(d),
+          "folder",
+          () => {
+            homeFolder = d.name;
+            renderHomeBody();
+          }
+        )
+      )
+    );
+    library.maps
+      .filter((m) => (homeQuery ? q(stem(m.file)) : m.folder === homeFolder))
+      .forEach((f) =>
+        grid.append(
+          homeCard(
+            stem(f.file),
+            [
+              mcLabel(f.version) +
+                (cur(f.version) ? " · wrong server version" : ""),
+              fmtDate(f.modified),
+            ],
+            f.icon,
+            (cur(f.version) ? "bad " : "") +
+              (sel.map === f.rel ? "picked" : ""),
+            () => pickZip(f)
+          )
+        )
+      );
+  } else {
+    emptyText = "No singleplayer worlds found in your .minecraft/saves folder.";
+    spWorlds
+      .filter((w) => q(w.name))
+      .forEach((w) =>
+        grid.append(
+          homeCard(
+            w.name,
+            [
+              mcLabel(w.version) +
+                (cur(w.version) ? " · wrong server version" : ""),
+              fmtDate(w.modified),
+            ],
+            w.icon,
+            (cur(w.version) ? "bad " : "") + (sel.sp === w.dir ? "picked" : ""),
+            () => chooseSp(w)
+          )
+        )
+      );
+  }
+  if (grid.children.length) body.append(grid);
+  else if (!body.children.length || homeTab !== "worlds" || !homeFolder)
+    body.append(h("p", "home-empty", emptyText));
+}
+
+function runBanner() {
+  const w = selWorld();
+  if (!w) return null;
+  const pl =
+    [...sel.plugins].map((p) => stem(leaf(p))).join(", ") || "No plugins";
+  return homeCard(
+    wName(w),
+    [mcLabel(w.version), "Plugins: " + pl],
+    w.icon,
+    "picked static",
+    () => {}
+  );
+}
+
+$("open-server").addEventListener("click", () =>
+  invoke("open_server_folder").catch((e) =>
+    message("Could not open the folder", String(e))
+  )
+);
+$("about-btn").addEventListener("click", () =>
+  T.opener
+    .openUrl("https://noblecratemc.com/app/about.html")
+    .catch(console.error)
+);
+$("more-maps").addEventListener("click", () =>
+  T.opener
+    .openUrl("https://noblecratemc.com/maps/java-maps.html")
+    .catch(console.error)
+);
+$("side-toggle").addEventListener("click", () =>
+  $("side").classList.toggle("collapsed")
+);
 
 // ---------------- Start ----------------
 render();

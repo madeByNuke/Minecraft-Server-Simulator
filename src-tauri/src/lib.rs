@@ -1348,6 +1348,7 @@ async fn start_game(
     state: State<'_, ServerState>,
     version: String,
     map_file: String,
+    sp_world: Option<String>,
     plugin_files: Vec<String>,
     lan: bool,
 ) -> Result<(), String> {
@@ -1365,13 +1366,33 @@ async fn start_game(
     let java = find_java(&root.join("jdk").join(java_for(&version)), 0)
         .ok_or("Java for this server is missing. Download the server again.")?;
 
-    let mut map_zip = library_dir(&app, "map")?;
-    for seg in map_file.split('/') {
-        map_zip = map_zip.join(safe_segment(seg)?);
+    // World source: a singleplayer save folder, or a zip from the library
+    let sp_src: Option<PathBuf> = match &sp_world {
+        Some(n) => {
+            let p = saves_dir()?.join(safe_segment(n)?);
+            if !p.join("level.dat").is_file() {
+                return Err("That singleplayer world could not be found.".into());
+            }
+            Some(p)
+        }
+        None => None,
+    };
+    let mut map_zip = PathBuf::new();
+    let world_ver;
+    if let Some(src) = &sp_src {
+        world_ver = read_level(&src.join("level.dat")).0;
+    } else {
+        map_zip = library_dir(&app, "map")?;
+        for seg in map_file.split('/') {
+            map_zip = map_zip.join(safe_segment(seg)?);
+        }
+        if !map_zip.is_file() {
+            return Err("That world file is missing. Import it again.".into());
+        }
+        world_ver = world_version(&map_zip);
     }
-    if !map_zip.is_file() {
-        return Err("That world file is missing. Import it again.".into());
-    }
+    check_world_version(&world_ver, &version)?;
+
     let plugin_dir = library_dir(&app, "plugin")?;
     let mut jars = Vec::new();
     for f in &plugin_files {
@@ -1386,10 +1407,13 @@ async fn start_game(
     }
 
     progress(&app, "world", "Setting up the world...", 10.0);
-    let (z, s) = (map_zip.clone(), server_dir.clone());
-    tokio::task::spawn_blocking(move || install_world(&z, &s))
-        .await
-        .map_err(e2s)??;
+    let (z, sp, s) = (map_zip.clone(), sp_src.clone(), server_dir.clone());
+    tokio::task::spawn_blocking(move || match sp {
+        Some(src) => install_sp_world(&src, &s),
+        None => install_world(&z, &s),
+    })
+    .await
+    .map_err(e2s)??;
 
     progress(&app, "bot", "Installing plugins...", 40.0);
     let s = server_dir.clone();
@@ -1401,20 +1425,22 @@ async fn start_game(
     let settings = load_settings(&root);
     apply_network_settings(&server_dir, &settings, lan)?;
 
-    let world_name = map_zip
-        .file_stem()
-        .map(|s| s.to_string_lossy().into_owned())
-        .unwrap_or_default();
+    let world_name = match &sp_src {
+        Some(p) => p.file_name(),
+        None => map_zip.file_stem(),
+    }
+    .map(|s| s.to_string_lossy().into_owned())
+    .unwrap_or_default();
     set_property(&server_dir.join("server.properties"), "motd", &world_name)?;
-    let icon = read_zip_icon(&map_zip).and_then(|b| icon_64(&b));
+    let icon = match &sp_src {
+        Some(p) => std::fs::read(p.join("icon.png")).ok(),
+        None => read_zip_icon(&map_zip),
+    }
+    .and_then(|b| icon_64(&b));
     let icon_path = server_dir.join("server-icon.png");
     match &icon {
-        Some(b) => {
-            let _ = std::fs::write(&icon_path, b);
-        }
-        None => {
-            let _ = std::fs::remove_file(&icon_path);
-        }
+        Some(b) => { let _ = std::fs::write(&icon_path, b); }
+        None => { let _ = std::fs::remove_file(&icon_path); }
     }
 
     start_server(&app, &state, &java, &server_dir, &settings).await?;
@@ -1519,6 +1545,88 @@ fn apply_network_settings(server_dir: &Path, settings: &Settings, lan: bool) -> 
     set_property(&props, "server-ip", if lan { "" } else { "127.0.0.1" })
 }
 
+#[derive(Serialize)]
+struct SpWorld { dir: String, name: String, version: String, icon: Option<String>, modified: u64 }
+
+fn saves_dir() -> Result<PathBuf, String> {
+    let a = std::env::var("APPDATA").map_err(|_| "Could not find the Minecraft folder.".to_string())?;
+    Ok(PathBuf::from(a).join(".minecraft").join("saves"))
+}
+
+/// (version, level name) from an unzipped world's level.dat
+fn read_level(dat: &Path) -> (String, String) {
+    use fastnbt::Value;
+    use std::io::Read;
+    let mut out = (String::new(), String::new());
+    let Ok(raw) = std::fs::read(dat) else { return out };
+    let mut dec = Vec::new();
+    if flate2::read::GzDecoder::new(&raw[..]).read_to_end(&mut dec).is_err() { return out; }
+    let Ok(Value::Compound(root)) = fastnbt::from_bytes::<Value>(&dec) else { return out };
+    let Some(Value::Compound(data)) = root.get("Data") else { return out };
+    if let Some(Value::String(n)) = data.get("LevelName") { out.1 = n.clone(); }
+    if let Some(Value::Compound(v)) = data.get("Version") {
+        if let Some(Value::String(n)) = v.get("Name") { out.0 = n.clone(); }
+    } else if !data.contains_key("DataVersion") {
+        out.0 = "1.8 or older".into();
+    }
+    out
+}
+
+fn check_world_version(world: &str, server: &str) -> Result<(), String> {
+    if world.is_empty() { return Ok(()); }
+    let ok = if world.contains("older") { server.starts_with("1.8") } else { world == server };
+    if ok { Ok(()) } else {
+        Err(format!("This world was made in Minecraft {world}, but the selected server is {server}. Choose the matching server version."))
+    }
+}
+
+fn copy_dir(src: &Path, dst: &Path) -> Result<(), String> {
+    std::fs::create_dir_all(dst).map_err(e2s)?;
+    for e in std::fs::read_dir(src).map_err(e2s)?.flatten() {
+        let (from, to) = (e.path(), dst.join(e.file_name()));
+        if from.is_dir() { copy_dir(&from, &to)?; }
+        else if e.file_name() != "session.lock" { std::fs::copy(&from, &to).map_err(e2s)?; }
+    }
+    Ok(())
+}
+
+fn install_sp_world(src: &Path, server_dir: &Path) -> Result<(), String> {
+    for name in ["world", "world_nether", "world_the_end"] {
+        let _ = std::fs::remove_dir_all(server_dir.join(name));
+    }
+    copy_dir(src, &server_dir.join("world"))
+}
+
+#[tauri::command]
+fn list_singleplayer() -> Result<Vec<SpWorld>, String> {
+    let mut out = Vec::new();
+    let Ok(rd) = std::fs::read_dir(saves_dir()?) else { return Ok(out) };
+    for e in rd.flatten() {
+        let p = e.path();
+        let dat = p.join("level.dat");
+        if !dat.is_file() { continue; }
+        let dir = e.file_name().to_string_lossy().into_owned();
+        let (version, lname) = read_level(&dat);
+        out.push(SpWorld {
+            name: if lname.is_empty() { dir.clone() } else { lname },
+            dir,
+            version,
+            icon: std::fs::read(p.join("icon.png")).ok().and_then(|b| icon_display(&b)).map(data_url),
+            modified: secs(std::fs::metadata(&dat).and_then(|m| m.modified())),
+        });
+    }
+    out.sort_by(|a, b| b.modified.cmp(&a.modified));
+    Ok(out)
+}
+
+#[tauri::command]
+fn open_server_folder(app: AppHandle) -> Result<(), String> {
+    let dir = data_dir(&app)?.join("servers");
+    std::fs::create_dir_all(&dir).map_err(e2s)?;
+    std::process::Command::new("explorer").arg(&dir).spawn().map_err(e2s)?;
+    Ok(())
+}
+
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -1530,7 +1638,7 @@ pub fn run() {
             get_status, accept_eula, prepare_server, install_server, list_versions,
             send_command, stop_server, list_library, get_links, save_links, import_files,
             open_library, library_path, get_lan_ip, allow_firewall, start_game,
-            restart_server, get_settings, save_settings, delete_items, create_folder, move_items,delete_folder, rename_item, rename_folder
+            restart_server, get_settings, save_settings, delete_items, create_folder, move_items,delete_folder, rename_item, rename_folder,list_singleplayer, open_server_folder
         ])
         .build(tauri::generate_context!())
         .expect("error while building the app");

@@ -1,6 +1,6 @@
 [package]
 name = "ssmc"
-version = "0.1.3"
+version = "0.1.5"
 description = "SSMC - Server Simulator for Minecraft Java Edition"
 edition = "2021"
 

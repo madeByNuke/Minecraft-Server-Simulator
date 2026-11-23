@@ -160,7 +160,27 @@ async function quitApp() {
     if (!(await askEula())) return quitApp();
     await invoke("accept_eula");
   }
-
+  try {
+    const vers = await invoke("list_versions");
+    const v = vers.find((x) => x.version === "1.8.8");
+    if (v && !v.installed) {
+      setStatus("Installing Minecraft server 1.8.8 (first launch only)...");
+      startCreep();
+      const un = await listen("setup-progress", (e) => {
+        const { label, percent } = e.payload;
+        if (label) setStatus(label);
+        if (percent) setBar(percent * 0.95);
+      });
+      try {
+        await invoke("install_server", { version: "1.8.8" });
+      } finally {
+        un();
+        stopCreep();
+      }
+    }
+  } catch (e) {
+    console.warn("First-run server install skipped:", e);
+  }
   setBar(100);
   setStatus("Ready");
   await sleep(400);
